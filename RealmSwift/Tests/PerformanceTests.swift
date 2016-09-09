@@ -340,7 +340,7 @@ class SwiftPerformanceTests: TestCase {
 
     func testRealmCreationCached() {
         var realm: Realm!
-        dispatchAsyncAndWait {
+        dispatchSyncNewThread {
             realm = try! Realm()
         }
 
@@ -806,7 +806,7 @@ class SwiftPerformanceTests: TestCase {
 
     func testRealmCreationCached() {
         var realm: Realm!
-        dispatchAsyncAndWait {
+        dispatchSyncNewThread {
             realm = try! Realm()
         }
 

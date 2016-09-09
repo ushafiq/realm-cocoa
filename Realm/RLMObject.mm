@@ -220,10 +220,4 @@
     return object;
 }
 
-- (RLMObjectBase *)objectWithoutConsumingRow {
-    RLMObjectBase *object = RLMCreateManagedAccessor(_objectClass, _info->realm, _info);
-    object->_row = _row;
-    return object;
-}
-
 @end

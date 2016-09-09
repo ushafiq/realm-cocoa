@@ -18,7 +18,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <Realm/RLMHandover.h>
+#import "RLMThreadSafeReference.h"
 
 NS_ASSUME_NONNULL_BEGIN
 

@@ -24,7 +24,7 @@
 #import "RLMQueryUtil.hpp"
 #import "RLMSwiftSupport.h"
 #import "RLMUtil.hpp"
-#import "RLMHandover_Private.hpp"
+#import "RLMThreadSafeReference_Private.hpp"
 
 #import <realm/link_view.hpp>
 
@@ -444,16 +444,17 @@ static void RLMValidateArrayBounds(__unsafe_unretained RLMArray *const ar,
 
 @implementation RLMArray (Handover)
 
-- (realm::AnyThreadConfined)rlm_handoverData {
+- (std::unique_ptr<realm::ThreadSafeReferenceBase>)rlm_newThreadSafeReference {
     REALM_TERMINATE("Unexpected handover of unmanaged `RLMArray`");
 }
 
-- (id)rlm_handoverMetadata {
+- (id)rlm_objectiveCMetadata {
     REALM_TERMINATE("Unexpected handover of unmanaged `RLMArray`");
 }
 
-+ (instancetype)rlm_objectWithHandoverData:(__unused realm::AnyThreadConfined&)data
-                                  metadata:(__unused id)metadata inRealm:(__unused RLMRealm *)realm {
++ (instancetype)rlm_objectWithThreadSafeReference:(__unused std::unique_ptr<realm::ThreadSafeReferenceBase>)reference
+                                         metadata:(__unused id)metadata
+                                            realm:(__unused RLMRealm *)realm {
     REALM_TERMINATE("Unexpected handover of unmanaged `RLMArray`");
 }
 

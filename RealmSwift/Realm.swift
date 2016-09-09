@@ -585,25 +585,6 @@ public final class Realm {
         try rlmRealm.writeCopy(to: url, encryptionKey: encryptionKey)
     }
 
-    // MARK: Handover
-
-    /**
-     Creates a `ThreadHandover` from the passed in objects that can be safely imported on a separate thread.
-
-     Used to pass objects between threads in a thread-safe manner.
-
-     - warning: Note that the returned `ThreadHandover` must be imported at most once, and that the current version
-               of the Realm will remain pinned until this package is imported or deallocated.
-
-     - parameter objects: The objects to pass between threads.
-     - returns: A package that can be imported on a separate thread.
-
-     - seealso: `ThreadHandover`
-     */
-    public func exportThreadHandover<T: ThreadConfined>(containing objects: [T]) -> ThreadHandover<T> {
-        return ThreadHandover(realm: self, objects: objects)
-    }
-
     // MARK: Internal
 
     internal var rlmRealm: RLMRealm
@@ -650,6 +631,7 @@ public enum Notification: String {
 
 /// Closure to run when the data in a Realm was modified.
 public typealias NotificationBlock = (_ notification: Notification, _ realm: Realm) -> Void
+
 
 // MARK: Unavailable
 
@@ -789,7 +771,7 @@ public final class Realm {
 
      - throws: An `NSError` if the transaction could not be completed successfully.
                If `block` throws, the propagated `ErrorType`.
-    */
+     */
     public func write(@noescape block: (() throws -> Void)) throws {
         beginWrite()
         do {
@@ -1259,25 +1241,6 @@ public final class Realm {
      */
     public func writeCopyToURL(fileURL: NSURL, encryptionKey: NSData? = nil) throws {
         try rlmRealm.writeCopyToURL(fileURL, encryptionKey: encryptionKey)
-    }
-
-    // MARK: Handover
-
-    /**
-     Creates a `ThreadHandover` from the passed in objects that can be safely imported on a separate thread.
-
-     Used to pass objects between threads in a thread-safe manner.
-     
-     - warning: Note that the returned `ThreadHandover` must be imported at most once, and that the current version
-                of the Realm will remain pinned until this package is imported or deallocated.
-
-     - parameter objects: The objects to pass between threads.
-     - returns: A package that can be imported on a separate thread.
-
-     - seealso: `ThreadHandover`
-     */
-    public func exportThreadHandover<T: ThreadConfined>(containing objects: [T]) -> ThreadHandover<T> {
-        return ThreadHandover(realm: self, objects: objects)
     }
 
     // MARK: Internal

@@ -119,8 +119,7 @@ public enum RealmCollectionChange<T> {
 A homogenous collection of `Object`s which can be retrieved, filtered, sorted,
 and operated upon.
 */
-public protocol RealmCollection: RandomAccessCollection, LazyCollectionProtocol, CustomStringConvertible, ThreadConfined {
-    // FIXME: Remove redundant conformance to `ThreadConfined` once bug SR-2146 is fixed.
+public protocol RealmCollection: RandomAccessCollection, LazyCollectionProtocol, CustomStringConvertible {
 
     /// Element type contained in this collection.
     associatedtype Element: Object
@@ -364,7 +363,7 @@ public protocol RealmCollection: RandomAccessCollection, LazyCollectionProtocol,
     func _addNotificationBlock(block: @escaping (RealmCollectionChange<AnyRealmCollection<Element>>) -> Void) -> NotificationToken
 }
 
-private class _AnyRealmCollectionBase<T: Object>: _ThreadConfined {
+private class _AnyRealmCollectionBase<T: Object> {
     typealias Wrapper = AnyRealmCollection<Element>
     typealias Element = T
     var realm: Realm? { fatalError() }
@@ -393,9 +392,6 @@ private class _AnyRealmCollectionBase<T: Object>: _ThreadConfined {
     func setValue(_ value: Any?, forKey key: String) { fatalError() }
     func _addNotificationBlock(block: @escaping (RealmCollectionChange<Wrapper>) -> Void)
         -> NotificationToken { fatalError() }
-    var bridgedData: RLMThreadConfined { fatalError() }
-    var bridgedMetadata: Any? { fatalError() }
-    class func bridge(data: RLMThreadConfined, metadata: Any?) -> Self { fatalError() }
 }
 
 private final class _AnyRealmCollection<C: RealmCollection>: _AnyRealmCollectionBase<C.Element> {
@@ -641,21 +637,6 @@ private final class _AnyRealmCollection<C: RealmCollection>: _AnyRealmCollection
     /// :nodoc:
     override func _addNotificationBlock(block: @escaping (RealmCollectionChange<Wrapper>) -> Void)
         -> NotificationToken { return base._addNotificationBlock(block: block) }
-
-    // MARK: Handover
-
-    override var bridgedData: RLMThreadConfined {
-        return base._private.bridgedData
-    }
-
-    override var bridgedMetadata: Any? {
-        return base._private.bridgedMetadata
-    }
-
-    static override func bridge(data: RLMThreadConfined, metadata: Any?) -> _AnyRealmCollection {
-        let bridgedBase = C._private.bridge(data: data, metadata: metadata)
-        return _AnyRealmCollection(base: bridgedBase as! C)
-    }
 }
 
 /**
@@ -671,13 +652,7 @@ public final class AnyRealmCollection<T: Object>: RealmCollection {
 
     /// Element type contained in this collection.
     public typealias Element = T
-    fileprivate let base: _AnyRealmCollectionBase<T>
-
-    // MARK: Initializers
-
-    fileprivate init(base: _AnyRealmCollectionBase<T>) {
-        self.base = base
-    }
+    private let base: _AnyRealmCollectionBase<T>
 
     /// Creates an AnyRealmCollection wrapping `base`.
     public init<C: RealmCollection>(_ base: C) where C.Element == T {
@@ -963,31 +938,6 @@ public final class AnyRealmCollection<T: Object>: RealmCollection {
         -> NotificationToken { return base._addNotificationBlock(block: block) }
 }
 
-// MARK: ThreadConfined
-
-private struct AnyRealmCollectionThreadConfinedMetadata<T: Object> {
-    var baseMetadata: Any?
-    var baseType: _AnyRealmCollectionBase<T>.Type
-}
-
-extension AnyRealmCollection: _ThreadConfined {
-    var bridgedData: RLMThreadConfined {
-        return base.bridgedData
-    }
-
-    var bridgedMetadata: Any? {
-        return AnyRealmCollectionThreadConfinedMetadata(
-            baseMetadata: base.bridgedMetadata,
-            baseType: type(of: base)
-        )
-    }
-
-    static func bridge(data: RLMThreadConfined, metadata: Any?) -> AnyRealmCollection {
-        let metadata = metadata as! AnyRealmCollectionThreadConfinedMetadata<T>
-        let bridgedBase = metadata.baseType.bridge(data: data, metadata: metadata.baseMetadata)
-        return AnyRealmCollection(base: bridgedBase)
-    }
-}
 
 // MARK: Unavailable
 
@@ -1130,8 +1080,7 @@ public enum RealmCollectionChange<T> {
  A homogenous collection of `Object`s which can be retrieved, filtered, sorted,
  and operated upon.
 */
-public protocol RealmCollectionType: CollectionType, CustomStringConvertible, ThreadConfined {
-    // FIXME: Remove redundant conformance to `ThreadConfined` once bug SR-2146 is fixed.
+public protocol RealmCollectionType: CollectionType, CustomStringConvertible {
 
     /// The type of the objects contained in the collection.
     associatedtype Element: Object
@@ -1371,7 +1320,7 @@ public protocol RealmCollectionType: CollectionType, CustomStringConvertible, Th
     func _addNotificationBlock(block: (RealmCollectionChange<AnyRealmCollection<Element>>) -> Void) -> NotificationToken
 }
 
-private class _AnyRealmCollectionBase<T: Object>: _ThreadConfined {
+private class _AnyRealmCollectionBase<T: Object> {
     typealias Wrapper = AnyRealmCollection<Element>
     typealias Element = T
     var realm: Realm? { fatalError() }
@@ -1400,9 +1349,6 @@ private class _AnyRealmCollectionBase<T: Object>: _ThreadConfined {
     func setValue(value: AnyObject?, forKey key: String) { fatalError() }
     func _addNotificationBlock(block: (RealmCollectionChange<Wrapper>) -> Void)
         -> NotificationToken { fatalError() }
-    var bridgedData: RLMThreadConfined { fatalError() }
-    var bridgedMetadata: Any? { fatalError() }
-    class func bridge(data: RLMThreadConfined, metadata: Any?) -> Self { fatalError() }
 }
 
 private final class _AnyRealmCollection<C: RealmCollectionType>: _AnyRealmCollectionBase<C.Element> {
@@ -1641,21 +1587,6 @@ private final class _AnyRealmCollection<C: RealmCollectionType>: _AnyRealmCollec
     /// :nodoc:
     override func _addNotificationBlock(block: (RealmCollectionChange<Wrapper>) -> Void)
         -> NotificationToken { return base._addNotificationBlock(block) }
-
-    // MAKR: Handover
-
-    override var bridgedData: RLMThreadConfined {
-        return base._private.bridgedData
-    }
-
-    override var bridgedMetadata: Any? {
-        return base._private.bridgedMetadata
-    }
-
-    static override func bridge(data: RLMThreadConfined, metadata: Any?) -> _AnyRealmCollection {
-        let bridgedBase = C._private.bridge(data, metadata: metadata)
-        return _AnyRealmCollection(base: bridgedBase as! C)
-    }
 }
 
 /**
@@ -1664,18 +1595,11 @@ private final class _AnyRealmCollection<C: RealmCollectionType>: _AnyRealmCollec
  Instances of `RealmCollectionType` forward operations to an opaque underlying collection having the same `Element`
  type.
  */
-public final class AnyRealmCollection<T: Object>: RealmCollectionType, ThreadConfined {
-    // FIXME: Remove redundant conformance to `ThreadConfined` once bug SR-2146 is fixed.
+public final class AnyRealmCollection<T: Object>: RealmCollectionType {
 
     /// The type of the objects contained in the collection.
     public typealias Element = T
     private let base: _AnyRealmCollectionBase<T>
-
-    // MARK: Initializers
-
-    private init(base: _AnyRealmCollectionBase<T>) {
-        self.base = base
-    }
 
     /// Creates an `AnyRealmCollection` wrapping `base`.
     public init<C: RealmCollectionType where C.Element == T>(_ base: C) {
@@ -1953,32 +1877,6 @@ public final class AnyRealmCollection<T: Object>: RealmCollectionType, ThreadCon
     /// :nodoc:
     public func _addNotificationBlock(block: (RealmCollectionChange<AnyRealmCollection>) -> ())
         -> NotificationToken { return base._addNotificationBlock(block) }
-}
-
-// MARK: ThreadConfined
-
-private struct AnyRealmCollectionThreadConfinedMetadata<T: Object> {
-    var baseMetadata: Any?
-    var baseType: _AnyRealmCollectionBase<T>.Type
-}
-
-extension AnyRealmCollection: _ThreadConfined {
-    var bridgedData: RLMThreadConfined {
-        return base.bridgedData
-    }
-
-    var bridgedMetadata: Any? {
-        return AnyRealmCollectionThreadConfinedMetadata(
-            baseMetadata: base.bridgedMetadata,
-            baseType: base.dynamicType
-        )
-    }
-
-    static func bridge(data: RLMThreadConfined, metadata: Any?) -> AnyRealmCollection {
-        let metadata = metadata as! AnyRealmCollectionThreadConfinedMetadata<T>
-        let bridgedBase = metadata.baseType.bridge(data, metadata: metadata.baseMetadata)
-        return AnyRealmCollection(base: bridgedBase)
-    }
 }
 
 #endif

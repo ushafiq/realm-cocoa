@@ -26,8 +26,8 @@
 #import "RLMQueryUtil.hpp"
 #import "RLMRealm_Private.hpp"
 #import "RLMSchema.h"
+#import "RLMThreadSafeReference_Private.hpp"
 #import "RLMUtil.hpp"
-#import "RLMHandover_Private.hpp"
 
 #import "list.hpp"
 #import "results.hpp"
@@ -452,20 +452,27 @@ static void RLMInsertObject(RLMArrayLinkView *ar, RLMObject *object, NSUInteger 
 
 @implementation RLMArrayLinkView (Handover)
 
-- (realm::AnyThreadConfined)rlm_handoverData {
-    return realm::AnyThreadConfined(_backingList);
+- (std::unique_ptr<realm::ThreadSafeReferenceBase>)rlm_newThreadSafeReference {
+    realm::ThreadSafeReference<realm::List> list_reference = _realm->_realm->obtain_thread_safe_reference(_backingList);
+    return std::make_unique<realm::ThreadSafeReference<realm::List>>(std::move(list_reference));
 }
 
-- (RLMArrayLinkViewHandoverMetadata *)rlm_handoverMetadata {
+- (RLMArrayLinkViewHandoverMetadata *)rlm_objectiveCMetadata {
     RLMArrayLinkViewHandoverMetadata *metadata = [[RLMArrayLinkViewHandoverMetadata alloc] init];
     metadata.parentClassName = @(_ownerInfo->objectSchema->name.c_str());
     metadata.key = _key;
     return metadata;
 }
 
-+ (instancetype)rlm_objectWithHandoverData:(realm::AnyThreadConfined&)data
-                                  metadata:(RLMArrayLinkViewHandoverMetadata *)metadata inRealm:(RLMRealm *)realm {
-    return [[RLMArrayLinkView alloc] initWithList:std::move(data.get_list())
++ (instancetype)rlm_objectWithThreadSafeReference:(std::unique_ptr<realm::ThreadSafeReferenceBase>)reference
+                                         metadata:(RLMArrayLinkViewHandoverMetadata *)metadata
+                                            realm:(RLMRealm *)realm {
+    REALM_ASSERT_DEBUG(dynamic_cast<realm::ThreadSafeReference<realm::List> *>(reference.get()));
+    auto list_reference = static_cast<realm::ThreadSafeReference<realm::List> *>(reference.get());
+
+    realm::List list = realm->_realm->resolve_thread_safe_reference(std::move(*list_reference));
+
+    return [[RLMArrayLinkView alloc] initWithList:std::move(list)
                                             realm:realm
                                        parentInfo:&realm->_info[metadata.parentClassName]
                                          property:realm.schema[metadata.parentClassName][metadata.key]];

@@ -19,7 +19,7 @@
 #import <Foundation/Foundation.h>
 
 #import <Realm/RLMObjectBase.h>
-#import <Realm/RLMHandover.h>
+#import <Realm/RLMThreadSafeReference.h>
 
 NS_ASSUME_NONNULL_BEGIN
 

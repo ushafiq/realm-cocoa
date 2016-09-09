@@ -28,8 +28,8 @@
 #import "RLMQueryUtil.hpp"
 #import "RLMRealm_Private.hpp"
 #import "RLMSchema_Private.h"
+#import "RLMThreadSafeReference_Private.hpp"
 #import "RLMUtil.hpp"
-#import "RLMHandover_Private.hpp"
 
 #import "results.hpp"
 
@@ -449,20 +449,24 @@ static inline void RLMResultsValidateInWriteTransaction(__unsafe_unretained RLMR
 
 @implementation RLMResults (Handover)
 
-- (realm::AnyThreadConfined)rlm_handoverData {
-    return AnyThreadConfined(_results);
+- (std::unique_ptr<realm::ThreadSafeReferenceBase>)rlm_newThreadSafeReference {
+    return std::make_unique<realm::ThreadSafeReference<Results>>(_realm->_realm->obtain_thread_safe_reference(_results));
 }
 
-- (id)rlm_handoverMetadata {
+- (id)rlm_objectiveCMetadata {
     return nil;
 }
 
-+ (instancetype)rlm_objectWithHandoverData:(realm::AnyThreadConfined &)data
-                                  metadata:(__unused id)metadata inRealm:(RLMRealm *)realm {
-    Results results = data.get_results();
++ (instancetype)rlm_objectWithThreadSafeReference:(std::unique_ptr<realm::ThreadSafeReferenceBase>)reference
+                                         metadata:(__unused id)metadata
+                                            realm:(RLMRealm *)realm {
+    REALM_ASSERT_DEBUG(dynamic_cast<realm::ThreadSafeReference<Results> *>(reference.get()));
+    auto results_reference = static_cast<realm::ThreadSafeReference<Results> *>(reference.get());
+
+    Results results = realm->_realm->resolve_thread_safe_reference(std::move(*results_reference));
+
     return [RLMResults resultsWithObjectInfo:realm->_info[RLMStringDataToNSString(results.get_object_type())]
                                      results:std::move(results)];
 }
 
 @end
-
